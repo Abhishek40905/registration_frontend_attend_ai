@@ -300,12 +300,13 @@ export default function RegistrationForm({ recordedVideo, onRegistrationSuccess 
             padding: '14px',
             fontSize: '1rem',
             width: '100%',
+            cursor: isSubmitting ? 'wait' : 'pointer'
           }}
         >
           {isSubmitting ? (
             <>
-              <Loader2 size={20} className="animate-spin" style={{ animation: 'spin 1s linear infinite' }} />
-              <span>Saving Video to Storage Folder...</span>
+              <Loader2 size={20} className="animate-spin" />
+              <span>Please wait for a while... Uploading data</span>
             </>
           ) : (
             <>
@@ -315,6 +316,46 @@ export default function RegistrationForm({ recordedVideo, onRegistrationSuccess 
           )}
         </button>
       </form>
+
+      {/* Full-Screen Loading Overlay: Continuous spinning circle with "Please wait for a while" */}
+      {isSubmitting && (
+        <div className="upload-modal-backdrop">
+          <div className="upload-modal-card">
+            {/* Spinning Circle */}
+            <div className="custom-spinner-ring" />
+
+            <div>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#fff', marginBottom: '6px' }}>
+                Please wait for a while...
+              </h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', lineHeight: '1.5' }}>
+                Uploading face scan video and registration details to Google Drive.
+              </p>
+            </div>
+
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.04)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '10px',
+              padding: '10px 14px',
+              fontSize: '0.775rem',
+              color: '#38bdf8',
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px'
+            }}>
+              <Loader2 size={14} className="animate-spin" />
+              <span>Creating your dedicated folder in Google Drive...</span>
+            </div>
+
+            <div style={{ fontSize: '0.725rem', color: 'var(--text-sub)' }}>
+              Please do not close or refresh this page.
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
