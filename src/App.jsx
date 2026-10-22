@@ -3,7 +3,6 @@ import Header from './components/Header';
 import LenskartFaceScanner from './components/LenskartFaceScanner';
 import RegistrationForm from './components/RegistrationForm';
 import SuccessModal from './components/SuccessModal';
-import DatasetViewer from './components/DatasetViewer';
 import { Eye, Cpu, Database } from 'lucide-react';
 
 export default function App() {
@@ -26,66 +25,38 @@ export default function App() {
   };
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px 50px' }}>
+    <div className="app-shell">
       {/* Top Navigation & Status */}
       <Header refreshTrigger={refreshTrigger} />
 
       {/* Hero Overview Banner */}
-      <div style={{
-        background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(6, 182, 212, 0.05) 100%)',
-        border: '1px solid var(--border-highlight)',
-        borderRadius: '16px',
-        padding: '16px 20px',
-        marginBottom: '28px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: '16px'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            borderRadius: '10px',
-            background: 'rgba(59, 130, 246, 0.2)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#60a5fa'
-          }}>
+      <div className="hero-banner">
+        <div className="hero-copy">
+          <div className="hero-icon">
             <Eye size={22} />
           </div>
           <div>
-            <div style={{ fontWeight: 700, color: '#fff', fontSize: '0.95rem' }}>
-              Lenskart-Style 3D Biometric Dataset Collection
-            </div>
-            <div style={{ color: 'var(--text-muted)', fontSize: '0.825rem' }}>
-              Align your face inside the oval guide. The system records an 8-second multi-angle video and stores it in the designated training directory.
-            </div>
+            <div className="eyebrow">Quick registration · 01</div>
+            <h2>Build your attendance profile</h2>
+            <p>Complete the short face scan, then add your college details. Your profile will be ready for AttendAI attendance.</p>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '16px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <div className="hero-points">
+          <div className="hero-point">
             <Cpu size={15} color="#38bdf8" />
-            <span>AI Preprocessing Ready</span>
+            <span>AI-assisted capture</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div className="hero-point">
             <Database size={15} color="#34d399" />
-            <span>Dedicated Video Storage</span>
+            <span>Secure profile handling</span>
           </div>
         </div>
       </div>
 
       {/* Main Registration Workspace Grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
-        gap: '28px',
-        alignItems: 'start'
-      }}>
-        {/* Left Column: Lenskart Face Scanner */}
+      <div className="workspace-grid">
+        {/* Left Column: Face Scanner */}
         <div>
           <LenskartFaceScanner
             onVideoReady={handleVideoReady}
@@ -101,9 +72,6 @@ export default function App() {
           />
         </div>
       </div>
-
-      {/* Dataset Storage View of Previously Saved Videos */}
-      <DatasetViewer refreshTrigger={refreshTrigger} />
 
       {/* Success Modal */}
       <SuccessModal data={successData} onReset={handleReset} />

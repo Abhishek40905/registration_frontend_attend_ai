@@ -4,7 +4,6 @@ import { Database, Film, User, Clock, CheckCircle2, RefreshCw } from 'lucide-rea
 export default function DatasetViewer({ refreshTrigger }) {
   const [dataset, setDataset] = useState([]);
   const [total, setTotal] = useState(0);
-  const [storagePath, setStoragePath] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const fetchDataset = async () => {
@@ -16,7 +15,6 @@ export default function DatasetViewer({ refreshTrigger }) {
         const data = await res.json();
         setDataset(data.records || []);
         setTotal(data.totalSamples || 0);
-        setStoragePath(data.storageDirectory || '');
       }
     } catch (err) {
       console.error('Failed to load dataset:', err);
@@ -35,14 +33,11 @@ export default function DatasetViewer({ refreshTrigger }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <Database size={20} color="#10b981" />
           <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fff' }}>
-            Stored Video Training Dataset ({total} Samples)
+            Recent registrations ({total})
           </h3>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            Folder: <code style={{ color: '#38bdf8', fontFamily: "'JetBrains Mono', monospace" }}>storage/videos/</code>
-          </span>
           <button
             onClick={fetchDataset}
             className="btn btn-secondary"
@@ -64,13 +59,13 @@ export default function DatasetViewer({ refreshTrigger }) {
           border: '1px dashed var(--border-color)',
         }}>
           <Film size={36} color="var(--text-sub)" style={{ margin: '0 auto 12px', display: 'block' }} />
-          <div style={{ fontWeight: 600, color: 'var(--text-muted)' }}>No training videos recorded yet</div>
+          <div style={{ fontWeight: 600, color: 'var(--text-muted)' }}>No registrations yet</div>
           <div style={{ fontSize: '0.825rem', marginTop: '4px' }}>
             Complete the face scan sequence and submit the registration form above to store your first video sample.
           </div>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '14px' }}>
+        <div className="dataset-grid">
           {dataset.map(item => (
             <div
               key={item.id}

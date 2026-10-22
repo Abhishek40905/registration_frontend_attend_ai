@@ -150,6 +150,10 @@ export default function LenskartFaceScanner({ onVideoReady, currentVideo }) {
     try {
       setPermissionError(null);
 
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error('Camera access is not available in this browser. Please open the page in a secure, camera-enabled browser.');
+      }
+
       if (mediaStreamRef.current) {
         mediaStreamRef.current.getTracks().forEach(track => track.stop());
       }
@@ -188,7 +192,7 @@ export default function LenskartFaceScanner({ onVideoReady, currentVideo }) {
       } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
         setPermissionError('No camera found on this device. Please connect a webcam.');
       } else {
-        setPermissionError(`Camera error: ${err.message || 'Unable to access camera'}`);
+        setPermissionError(err.message || 'Unable to access the camera. Please try again.');
       }
     }
   }, [selectedDeviceId]);
@@ -533,7 +537,7 @@ export default function LenskartFaceScanner({ onVideoReady, currentVideo }) {
   }
 
   return (
-    <div className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+    <div className="glass-panel scanner-card">
       {/* Scanner Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

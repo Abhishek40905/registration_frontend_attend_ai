@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   User,
   Mail,
-  CreditCard,
   Building2,
   Tag,
   FileVideo,
@@ -15,7 +14,7 @@ import {
 export default function RegistrationForm({ recordedVideo, onRegistrationSuccess }) {
   const [formData, setFormData] = useState({
     name: '',
-    userId: '',
+    enrollmentNo: '',
     email: '',
     department: 'Artificial Intelligence & Data Science',
     role: 'Student',
@@ -40,8 +39,10 @@ export default function RegistrationForm({ recordedVideo, onRegistrationSuccess 
       return;
     }
 
-    if (!formData.userId.trim()) {
-      setErrorMessage('Please enter a Student or Employee ID.');
+    const enrollmentSuffix = formData.enrollmentNo.trim().replace(/^CSJMA/i, '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+
+    if (!enrollmentSuffix) {
+      setErrorMessage('Please enter your enrollment number.');
       return;
     }
 
@@ -61,7 +62,8 @@ export default function RegistrationForm({ recordedVideo, onRegistrationSuccess 
       // Construct multipart/form-data payload
       const payload = new FormData();
       payload.append('name', formData.name);
-      payload.append('userId', formData.userId);
+      const enrollmentId = `CSJMA${enrollmentSuffix}`;
+      payload.append('userId', enrollmentId);
       payload.append('email', formData.email);
       payload.append('department', formData.department);
       payload.append('role', formData.role);
@@ -70,7 +72,7 @@ export default function RegistrationForm({ recordedVideo, onRegistrationSuccess 
 
       // Determine extension based on mimeType
       const ext = recordedVideo.mimeType.includes('mp4') ? 'mp4' : 'webm';
-      const fileName = `${formData.userId.replace(/[^a-zA-Z0-9_-]/g, '_')}_scan.${ext}`;
+      const fileName = `${enrollmentId}_scan.${ext}`;
       payload.append('video', recordedVideo.blob, fileName);
 
       // Use relative URL — works both in dev (Vite proxy) and prod (same origin on Render)
@@ -103,7 +105,7 @@ export default function RegistrationForm({ recordedVideo, onRegistrationSuccess 
   };
 
   return (
-    <div className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <div className="glass-panel registration-card">
       <div>
         <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <User size={20} color="#38bdf8" />
@@ -177,7 +179,7 @@ export default function RegistrationForm({ recordedVideo, onRegistrationSuccess 
         )}
       </div>
 
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <form onSubmit={handleSubmit} className="registration-form">
         {/* Full Name */}
         <div>
           <label className="form-label" htmlFor="name">
@@ -198,22 +200,25 @@ export default function RegistrationForm({ recordedVideo, onRegistrationSuccess 
         </div>
 
         {/* User / Student ID & Role Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+        <div className="form-two-col">
           <div>
-            <label className="form-label" htmlFor="userId">
-              ID / Roll Number <span style={{ color: '#f87171' }}>*</span>
+            <label className="form-label" htmlFor="enrollmentNo">
+              Enrollment No. <span style={{ color: '#f87171' }}>*</span>
             </label>
-            <input
-              id="userId"
-              name="userId"
-              type="text"
-              required
-              placeholder="e.g. STU-2024-089"
-              value={formData.userId}
-              onChange={handleChange}
-              className="form-input"
-              style={{ fontFamily: "'JetBrains Mono', monospace" }}
-            />
+            <div className="enrollment-input">
+              <span className="enrollment-prefix">CSJMA</span>
+              <input
+              id="enrollmentNo"
+              name="enrollmentNo"
+                type="text"
+                required
+                placeholder="2024A001"
+                value={formData.enrollmentNo.replace(/^CSJMA/i, '')}
+                onChange={(e) => handleChange({ target: { name: 'enrollmentNo', value: e.target.value.replace(/^CSJMA/i, '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase() } })}
+                className="form-input"
+                style={{ fontFamily: "'JetBrains Mono', monospace" }}
+              />
+            </div>
           </div>
 
           <div>
@@ -311,7 +316,7 @@ export default function RegistrationForm({ recordedVideo, onRegistrationSuccess 
           ) : (
             <>
               <Send size={18} />
-              <span>Post & Store Registration Video</span>
+              <span>Complete Registration</span>
             </>
           )}
         </button>
@@ -329,7 +334,7 @@ export default function RegistrationForm({ recordedVideo, onRegistrationSuccess 
                 Please wait for a while...
               </h3>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', lineHeight: '1.5' }}>
-                Uploading face scan video and registration details to Google Drive.
+                Saving your face scan and registration details securely.
               </p>
             </div>
 
@@ -347,7 +352,7 @@ export default function RegistrationForm({ recordedVideo, onRegistrationSuccess 
               gap: '8px'
             }}>
               <Loader2 size={14} className="animate-spin" />
-              <span>Creating your dedicated folder in Google Drive...</span>
+              <span>Preparing your attendance profile...</span>
             </div>
 
             <div style={{ fontSize: '0.725rem', color: 'var(--text-sub)' }}>
