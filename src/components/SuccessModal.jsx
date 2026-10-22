@@ -93,6 +93,13 @@ export default function SuccessModal({ data, onReset }) {
           </div>
 
           <div className="success-detail-row" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '6px' }}>
+            <span style={{ color: 'var(--text-muted)' }}>Academic Details:</span>
+            <span style={{ color: '#fff' }}>
+              {data.department || 'CSE'} • {data.year || '1st Year'} ({data.gender || 'Male'})
+            </span>
+          </div>
+
+          <div className="success-detail-row" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '6px' }}>
             <span style={{ color: 'var(--text-muted)' }}>Video File:</span>
             <code style={{ color: '#34d399', fontFamily: "'JetBrains Mono', monospace" }}>{data.videoFileName}</code>
           </div>

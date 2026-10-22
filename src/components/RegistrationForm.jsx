@@ -15,9 +15,11 @@ export default function RegistrationForm({ recordedVideo, onRegistrationSuccess 
   const [formData, setFormData] = useState({
     name: '',
     enrollmentNo: '',
-    email: '',
-    department: 'Artificial Intelligence & Data Science',
+    gender: 'Male',
+    department: 'CSE',
+    year: '1st Year',
     role: 'Student',
+    email: '',
     notes: '',
   });
 
@@ -64,9 +66,11 @@ export default function RegistrationForm({ recordedVideo, onRegistrationSuccess 
       payload.append('name', formData.name);
       const enrollmentId = `CSJMA${enrollmentSuffix}`;
       payload.append('userId', enrollmentId);
-      payload.append('email', formData.email);
+      payload.append('gender', formData.gender);
       payload.append('department', formData.department);
+      payload.append('year', formData.year);
       payload.append('role', formData.role);
+      payload.append('email', formData.email);
       payload.append('notes', formData.notes);
       payload.append('duration', recordedVideo.duration || 8);
 
@@ -199,26 +203,80 @@ export default function RegistrationForm({ recordedVideo, onRegistrationSuccess 
           </div>
         </div>
 
-        {/* User / Student ID & Role Grid */}
-        <div className="form-two-col">
-          <div>
-            <label className="form-label" htmlFor="enrollmentNo">
-              Enrollment No. <span style={{ color: '#f87171' }}>*</span>
-            </label>
-            <div className="enrollment-input">
-              <span className="enrollment-prefix">CSJMA</span>
-              <input
+        {/* Enrollment No. */}
+        <div>
+          <label className="form-label" htmlFor="enrollmentNo">
+            Enrollment No. <span style={{ color: '#f87171' }}>*</span>
+          </label>
+          <div className="enrollment-input">
+            <span className="enrollment-prefix">CSJMA</span>
+            <input
               id="enrollmentNo"
               name="enrollmentNo"
-                type="text"
-                required
-                placeholder="2024A001"
-                value={formData.enrollmentNo.replace(/^CSJMA/i, '')}
-                onChange={(e) => handleChange({ target: { name: 'enrollmentNo', value: e.target.value.replace(/^CSJMA/i, '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase() } })}
-                className="form-input"
-                style={{ fontFamily: "'JetBrains Mono', monospace" }}
-              />
-            </div>
+              type="text"
+              required
+              placeholder="2024A001"
+              value={formData.enrollmentNo.replace(/^CSJMA/i, '')}
+              onChange={(e) => handleChange({ target: { name: 'enrollmentNo', value: e.target.value.replace(/^CSJMA/i, '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase() } })}
+              className="form-input"
+              style={{ fontFamily: "'JetBrains Mono', monospace" }}
+            />
+          </div>
+        </div>
+
+        {/* Department & Year */}
+        <div className="form-two-col">
+          <div>
+            <label className="form-label" htmlFor="department">
+              Department <span style={{ color: '#f87171' }}>*</span>
+            </label>
+            <select
+              id="department"
+              name="department"
+              value={formData.department}
+              onChange={handleChange}
+              className="form-input"
+            >
+              <option value="CSE">CSE</option>
+              <option value="AI">AI</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="form-label" htmlFor="year">
+              Year <span style={{ color: '#f87171' }}>*</span>
+            </label>
+            <select
+              id="year"
+              name="year"
+              value={formData.year}
+              onChange={handleChange}
+              className="form-input"
+            >
+              <option value="1st Year">1st Year</option>
+              <option value="2nd Year">2nd Year</option>
+              <option value="3rd Year">3rd Year</option>
+              <option value="4th Year">4th Year</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Gender & Role */}
+        <div className="form-two-col">
+          <div>
+            <label className="form-label" htmlFor="gender">
+              Gender <span style={{ color: '#f87171' }}>*</span>
+            </label>
+            <select
+              id="gender"
+              name="gender"
+              value={formData.gender}
+              onChange={handleChange}
+              className="form-input"
+            >
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
           </div>
 
           <div>
@@ -234,9 +292,7 @@ export default function RegistrationForm({ recordedVideo, onRegistrationSuccess 
             >
               <option value="Student">Student</option>
               <option value="Faculty">Faculty</option>
-              <option value="Researcher">Researcher</option>
               <option value="Staff">Staff</option>
-              <option value="Visitor">Visitor</option>
             </select>
           </div>
         </div>
@@ -256,27 +312,6 @@ export default function RegistrationForm({ recordedVideo, onRegistrationSuccess 
             onChange={handleChange}
             className="form-input"
           />
-        </div>
-
-        {/* Department */}
-        <div>
-          <label className="form-label" htmlFor="department">
-            Department / Faculty
-          </label>
-          <select
-            id="department"
-            name="department"
-            value={formData.department}
-            onChange={handleChange}
-            className="form-input"
-          >
-            <option value="Artificial Intelligence & Data Science">Artificial Intelligence & Data Science</option>
-            <option value="Computer Science & Engineering">Computer Science & Engineering</option>
-            <option value="Information Technology">Information Technology</option>
-            <option value="Electronics & Communication">Electronics & Communication</option>
-            <option value="Mechanical Engineering">Mechanical Engineering</option>
-            <option value="Management Studies">Management Studies</option>
-          </select>
         </div>
 
         {/* Optional Notes */}
