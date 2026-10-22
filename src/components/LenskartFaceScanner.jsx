@@ -10,7 +10,6 @@ import {
   Pause,
   SwitchCamera,
   Sparkles,
-  Info,
   ArrowLeft,
   ArrowRight,
   UserX,
@@ -915,27 +914,6 @@ export default function LenskartFaceScanner({ onVideoReady, currentVideo }) {
             )}
           </>
         )}
-      </div>
-
-      {/* AI Verification Guidelines */}
-      <div style={{
-        background: 'rgba(255, 255, 255, 0.02)',
-        border: '1px solid var(--border-color)',
-        borderRadius: '12px',
-        padding: '12px 14px',
-        fontSize: '0.813rem',
-        color: 'var(--text-muted)',
-        display: 'flex',
-        alignItems: 'flex-start',
-        gap: '10px'
-      }}>
-        <Info size={18} color="#06b6d4" style={{ flexShrink: 0, marginTop: '2px' }} />
-        <div>
-          <strong style={{ color: '#fff' }}>AI Head-Pose Verification Active:</strong>
-          <span style={{ display: 'block', marginTop: '2px' }}>
-            The scanner will not start unless a person is centered in frame. During recording, the script monitors your head yaw and <strong>will pause the recording</strong> if you do not turn left or right when prompted.
-          </span>
-        </div>
       </div>
     </div>
   );
