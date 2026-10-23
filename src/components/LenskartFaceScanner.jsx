@@ -78,6 +78,55 @@ function estimateHeadPose(landmarks) {
   };
 }
 
+// Validates whether the detected face is centered inside the Lenskart oval guide
+function checkFaceInsideOval(detection, videoEl) {
+  if (!detection || !detection.detection || !videoEl) return { inside: false, reason: 'NO_FACE' };
+
+  const box = detection.detection.box;
+  const vw = videoEl.videoWidth || 640;
+  const vh = videoEl.videoHeight || 480;
+
+  // Face center (normalized 0 to 1)
+  const faceCenterX = (box.x + box.width / 2) / vw;
+  const faceCenterY = (box.y + box.height / 2) / vh;
+
+  // Face size relative to video frame
+  const faceWidthRatio = box.width / vw;
+  const faceHeightRatio = box.height / vh;
+
+  // Oval target center in normalized video frame
+  const targetCenterX = 0.5;
+  const targetCenterY = 0.46; // Human eyes/face sit slightly above center in portrait view
+
+  // Normalized semi-axes of the oval guide
+  const rx = 0.22; // allows ~44% horizontal width
+  const ry = 0.28; // allows ~56% vertical height
+
+  // Normalized distance squared to center of ellipse: (dx/rx)^2 + (dy/ry)^2
+  const dx = (faceCenterX - targetCenterX) / rx;
+  const dy = (faceCenterY - targetCenterY) / ry;
+  const ellipseDistSq = (dx * dx) + (dy * dy);
+
+  // Check 1: Must be inside ellipse (with gentle boundary tolerance)
+  if (ellipseDistSq > 1.15) {
+    if (faceCenterX < 0.35) return { inside: false, reason: 'MOVE_RIGHT' };
+    if (faceCenterX > 0.65) return { inside: false, reason: 'MOVE_LEFT' };
+    if (faceCenterY < 0.26) return { inside: false, reason: 'MOVE_DOWN' };
+    if (faceCenterY > 0.66) return { inside: false, reason: 'MOVE_UP' };
+    return { inside: false, reason: 'OUT_OF_BOUNDS' };
+  }
+
+  // Check 2: Size check - not too far, not too close
+  if (faceHeightRatio < 0.18 || faceWidthRatio < 0.14) {
+    return { inside: false, reason: 'MOVE_CLOSER' };
+  }
+  if (faceHeightRatio > 0.82 || faceWidthRatio > 0.72) {
+    return { inside: false, reason: 'MOVE_AWAY' };
+  }
+
+  return { inside: true, reason: 'ALIGNED' };
+}
+
 export default function LenskartFaceScanner({ onVideoReady, currentVideo }) {
   const [modelsLoaded, setModelsLoaded] = useState(false);
   const [modelError, setModelError] = useState(null);
@@ -86,6 +135,8 @@ export default function LenskartFaceScanner({ onVideoReady, currentVideo }) {
 
   // Real-time AI Face Detection State
   const [faceDetected, setFaceDetected] = useState(false);
+  const [isFaceInsideOval, setIsFaceInsideOval] = useState(false);
+  const [ovalAlignmentReason, setOvalAlignmentReason] = useState('NO_FACE');
   const [currentPose, setCurrentPose] = useState(null); // { yaw: 'STRAIGHT', pitch: 'LEVEL' }
 
   // Recording State & Pose Requirements
@@ -113,6 +164,7 @@ export default function LenskartFaceScanner({ onVideoReady, currentVideo }) {
 
   // Track latest detection & recording state in refs for interval loop
   const faceDetectedRef = useRef(false);
+  const isFaceInsideOvalRef = useRef(false);
   const currentPoseRef = useRef(null);
   const isRecordingRef = useRef(false);
   const recordingSecondsRef = useRef(0);
@@ -232,14 +284,24 @@ export default function LenskartFaceScanner({ onVideoReady, currentVideo }) {
 
         if (detection && detection.detection.score >= 0.45) {
           const pose = estimateHeadPose(detection.landmarks);
+          const alignment = checkFaceInsideOval(detection, videoRef.current);
+
           faceDetectedRef.current = true;
+          isFaceInsideOvalRef.current = alignment.inside;
           currentPoseRef.current = pose;
+
           setFaceDetected(true);
+          setIsFaceInsideOval(alignment.inside);
+          setOvalAlignmentReason(alignment.reason);
           setCurrentPose(pose);
         } else {
           faceDetectedRef.current = false;
+          isFaceInsideOvalRef.current = false;
           currentPoseRef.current = null;
+
           setFaceDetected(false);
+          setIsFaceInsideOval(false);
+          setOvalAlignmentReason('NO_FACE');
           setCurrentPose(null);
         }
       } catch (err) {
@@ -303,17 +365,17 @@ export default function LenskartFaceScanner({ onVideoReady, currentVideo }) {
 
   const currentStep = getExpectedInstruction(recordingSeconds);
 
-  // 5. Start scan sequence with 3-second countdown (blocks if no face detected!)
+  // 5. Start scan sequence with 3-second countdown (blocks if no face detected or outside oval!)
   const handleStartScanSequence = () => {
-    if (!cameraActive || isRecording || !faceDetected) return;
+    if (!cameraActive || isRecording || !faceDetected || !isFaceInsideOvalRef.current) return;
 
     setCountdown(3);
     const countdownInterval = setInterval(() => {
       setCountdown(prev => {
-        // Abort countdown if face leaves screen!
-        if (!faceDetectedRef.current) {
+        // Abort countdown if face leaves oval!
+        if (!faceDetectedRef.current || !isFaceInsideOvalRef.current) {
           clearInterval(countdownInterval);
-          alert('Face lost! Please stay centered in the oval frame.');
+          alert('Face moved outside the oval! Please keep your face centered inside the oval frame.');
           return null;
         }
 
@@ -396,18 +458,19 @@ export default function LenskartFaceScanner({ onVideoReady, currentVideo }) {
 
       // Smart Recording Progress Loop:
       // Ticks every 100ms. ONLY advances time if:
-      // 1. Face is present
+      // 1. Face is present inside the oval
       // 2. Person is performing the REQUIRED head pose (Left / Right / Straight)!
       recordIntervalRef.current = setInterval(() => {
         const hasFace = faceDetectedRef.current;
+        const insideOval = isFaceInsideOvalRef.current;
         const pose = currentPoseRef.current;
         const currentSec = recordingSecondsRef.current;
         const step = getExpectedInstruction(currentSec);
 
-        // Check 1: Is person present on screen?
-        if (!hasFace) {
+        // Check 1: Is person inside oval?
+        if (!hasFace || !insideOval) {
           setIsPosePaused(true);
-          setPauseReason('No face detected! Return to oval guide.');
+          setPauseReason(!hasFace ? 'No face detected! Return to oval guide.' : 'Face outside oval! Keep your face inside the oval.');
           if (recorder.state === 'recording') {
             recorder.pause();
           }
@@ -523,16 +586,20 @@ export default function LenskartFaceScanner({ onVideoReady, currentVideo }) {
 
   // Dynamic oval styling
   let ovalClass = 'lenskart-oval';
-  if (!faceDetected && cameraActive && !videoPreviewUrl) {
-    ovalClass += ' no-face';
-  } else if (isRecording) {
-    if (isPosePaused) {
-      ovalClass += ' paused';
+  if (cameraActive && !videoPreviewUrl) {
+    if (!faceDetected) {
+      ovalClass += ' no-face';
+    } else if (!isFaceInsideOval) {
+      ovalClass += ' outside-oval';
+    } else if (isRecording) {
+      if (isPosePaused) {
+        ovalClass += ' paused';
+      } else {
+        ovalClass += ' scanning';
+      }
     } else {
-      ovalClass += ' scanning';
+      ovalClass += ' face-detected';
     }
-  } else if (faceDetected) {
-    ovalClass += ' face-detected';
   }
 
   return (
@@ -558,20 +625,35 @@ export default function LenskartFaceScanner({ onVideoReady, currentVideo }) {
               borderRadius: '999px',
               fontSize: '0.75rem',
               fontWeight: 700,
-              background: faceDetected ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-              border: `1px solid ${faceDetected ? 'rgba(16, 185, 129, 0.4)' : 'rgba(239, 68, 68, 0.4)'}`,
-              color: faceDetected ? '#34d399' : '#f87171'
+              background: isFaceInsideOval
+                ? 'rgba(16, 185, 129, 0.15)'
+                : faceDetected
+                ? 'rgba(245, 158, 11, 0.15)'
+                : 'rgba(239, 68, 68, 0.15)',
+              border: `1px solid ${
+                isFaceInsideOval
+                  ? 'rgba(16, 185, 129, 0.4)'
+                  : faceDetected
+                  ? 'rgba(245, 158, 11, 0.4)'
+                  : 'rgba(239, 68, 68, 0.4)'
+              }`,
+              color: isFaceInsideOval ? '#34d399' : faceDetected ? '#fbbf24' : '#f87171'
             }}>
               {modelsLoaded ? (
-                faceDetected ? (
-                  <>
-                    <UserCheck size={14} />
-                    <span>Face Verified {currentPose ? `[${currentPose.yaw}]` : ''}</span>
-                  </>
-                ) : (
+                !faceDetected ? (
                   <>
                     <UserX size={14} />
                     <span>No Face Detected</span>
+                  </>
+                ) : !isFaceInsideOval ? (
+                  <>
+                    <AlertTriangle size={14} />
+                    <span>Position Face in Oval</span>
+                  </>
+                ) : (
+                  <>
+                    <UserCheck size={14} />
+                    <span>Face Aligned in Oval {currentPose ? `[${currentPose.yaw}]` : ''}</span>
                   </>
                 )
               ) : (
@@ -758,6 +840,8 @@ export default function LenskartFaceScanner({ onVideoReady, currentVideo }) {
               style={{
                 background: !faceDetected
                   ? 'rgba(239, 68, 68, 0.92)'
+                  : !isFaceInsideOval
+                  ? 'rgba(217, 119, 6, 0.94)'
                   : isPosePaused
                   ? 'rgba(217, 119, 6, 0.94)'
                   : isRecording
@@ -765,16 +849,37 @@ export default function LenskartFaceScanner({ onVideoReady, currentVideo }) {
                   : 'rgba(15, 23, 42, 0.85)',
                 border: !faceDetected
                   ? '1px solid rgba(239, 68, 68, 0.5)'
+                  : !isFaceInsideOval
+                  ? '1px solid rgba(245, 158, 11, 0.6)'
                   : isPosePaused
                   ? '1px solid rgba(245, 158, 11, 0.6)'
                   : '1px solid rgba(255, 255, 255, 0.15)',
-                boxShadow: (isPosePaused || !faceDetected) ? '0 0 20px rgba(0, 0, 0, 0.8)' : undefined
+                boxShadow: (isPosePaused || !faceDetected || !isFaceInsideOval) ? '0 0 20px rgba(0, 0, 0, 0.8)' : undefined
               }}
             >
               {!faceDetected ? (
                 <>
                   <UserX size={16} color="#fff" />
                   <span>No face detected! Please align inside oval</span>
+                </>
+              ) : !isFaceInsideOval ? (
+                <>
+                  <AlertTriangle size={16} color="#fff" />
+                  <span>
+                    {ovalAlignmentReason === 'MOVE_CLOSER'
+                      ? '🔍 Move closer to fit inside the oval'
+                      : ovalAlignmentReason === 'MOVE_AWAY'
+                      ? '↔️ Move slightly back from camera'
+                      : ovalAlignmentReason === 'MOVE_LEFT'
+                      ? '👈 Move left to center inside oval'
+                      : ovalAlignmentReason === 'MOVE_RIGHT'
+                      ? '👉 Move right to center inside oval'
+                      : ovalAlignmentReason === 'MOVE_DOWN'
+                      ? '👇 Move slightly down into oval'
+                      : ovalAlignmentReason === 'MOVE_UP'
+                      ? '👆 Move slightly up into oval'
+                      : '⚠️ Position your face inside the oval guide'}
+                  </span>
                 </>
               ) : isRecording ? (
                 isPosePaused ? (
@@ -791,7 +896,7 @@ export default function LenskartFaceScanner({ onVideoReady, currentVideo }) {
               ) : (
                 <>
                   <UserCheck size={16} color="#34d399" />
-                  <span>Face Aligned ✅ Click Start below to begin 3D scan</span>
+                  <span>Face Aligned Inside Oval ✅ Click Start below to begin 3D scan</span>
                 </>
               )}
             </div>
@@ -884,14 +989,14 @@ export default function LenskartFaceScanner({ onVideoReady, currentVideo }) {
               <button
                 type="button"
                 onClick={handleStartScanSequence}
-                disabled={!cameraActive || countdown !== null || !faceDetected || !modelsLoaded}
+                disabled={!cameraActive || countdown !== null || !faceDetected || !isFaceInsideOval || !modelsLoaded}
                 className="btn btn-scan"
                 style={{
                   flex: 1,
                   padding: '14px 24px',
                   fontSize: '1rem',
-                  opacity: (!faceDetected || !modelsLoaded) ? 0.55 : 1,
-                  cursor: (!faceDetected || !modelsLoaded) ? 'not-allowed' : 'pointer'
+                  opacity: (!faceDetected || !isFaceInsideOval || !modelsLoaded) ? 0.55 : 1,
+                  cursor: (!faceDetected || !isFaceInsideOval || !modelsLoaded) ? 'not-allowed' : 'pointer'
                 }}
               >
                 {!modelsLoaded ? (
@@ -903,6 +1008,11 @@ export default function LenskartFaceScanner({ onVideoReady, currentVideo }) {
                   <>
                     <UserX size={18} />
                     <span>Position Face in Oval to Start</span>
+                  </>
+                ) : !isFaceInsideOval ? (
+                  <>
+                    <AlertTriangle size={18} color="#fbbf24" />
+                    <span>Align Face Inside Oval to Start</span>
                   </>
                 ) : (
                   <>

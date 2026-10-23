@@ -89,7 +89,12 @@ export default function SuccessModal({ data, onReset }) {
 
           <div className="success-detail-row" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '6px' }}>
             <span style={{ color: 'var(--text-muted)' }}>Registered User:</span>
-            <strong style={{ color: '#fff' }}>{data.name} ({data.userId})</strong>
+            <strong style={{ color: '#fff' }}>{data.name}</strong>
+          </div>
+
+          <div className="success-detail-row" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '6px' }}>
+            <span style={{ color: 'var(--text-muted)' }}>Enrollment & Roll:</span>
+            <strong style={{ color: '#38bdf8' }}>{data.enrollmentNo || data.userId} {data.rollNo ? `• ${data.rollNo}` : ''}</strong>
           </div>
 
           <div className="success-detail-row" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '6px' }}>

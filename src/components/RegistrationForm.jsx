@@ -15,6 +15,7 @@ export default function RegistrationForm({ recordedVideo, onRegistrationSuccess 
   const [formData, setFormData] = useState({
     name: '',
     enrollmentNo: '',
+    rollNo: '',
     gender: 'Male',
     department: 'CSE',
     year: '1st Year',
@@ -48,6 +49,13 @@ export default function RegistrationForm({ recordedVideo, onRegistrationSuccess 
       return;
     }
 
+    const rollSuffix = formData.rollNo.trim().replace(/^CSJMA/i, '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+
+    if (!rollSuffix) {
+      setErrorMessage('Please enter your roll number.');
+      return;
+    }
+
     if (!formData.email.trim()) {
       setErrorMessage('Please enter an email address.');
       return;
@@ -65,7 +73,10 @@ export default function RegistrationForm({ recordedVideo, onRegistrationSuccess 
       const payload = new FormData();
       payload.append('name', formData.name);
       const enrollmentId = `CSJMA${enrollmentSuffix}`;
+      const rollId = `CSJMA${rollSuffix}`;
       payload.append('userId', enrollmentId);
+      payload.append('enrollmentNo', enrollmentId);
+      payload.append('rollNo', rollId);
       payload.append('gender', formData.gender);
       payload.append('department', formData.department);
       payload.append('year', formData.year);
@@ -203,24 +214,46 @@ export default function RegistrationForm({ recordedVideo, onRegistrationSuccess 
           </div>
         </div>
 
-        {/* Enrollment No. */}
-        <div>
-          <label className="form-label" htmlFor="enrollmentNo">
-            Enrollment No. <span style={{ color: '#f87171' }}>*</span>
-          </label>
-          <div className="enrollment-input">
-            <span className="enrollment-prefix">CSJMA</span>
-            <input
-              id="enrollmentNo"
-              name="enrollmentNo"
-              type="text"
-              required
-              placeholder="2024A001"
-              value={formData.enrollmentNo.replace(/^CSJMA/i, '')}
-              onChange={(e) => handleChange({ target: { name: 'enrollmentNo', value: e.target.value.replace(/^CSJMA/i, '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase() } })}
-              className="form-input"
-              style={{ fontFamily: "'JetBrains Mono', monospace" }}
-            />
+        {/* Enrollment No. & Roll No. */}
+        <div className="form-two-col">
+          <div>
+            <label className="form-label" htmlFor="enrollmentNo">
+              Enrollment No. <span style={{ color: '#f87171' }}>*</span>
+            </label>
+            <div className="enrollment-input">
+              <span className="enrollment-prefix">CSJMA</span>
+              <input
+                id="enrollmentNo"
+                name="enrollmentNo"
+                type="text"
+                required
+                placeholder="2100123"
+                value={formData.enrollmentNo.replace(/^CSJMA/i, '')}
+                onChange={(e) => handleChange({ target: { name: 'enrollmentNo', value: e.target.value.replace(/^CSJMA/i, '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase() } })}
+                className="form-input"
+                style={{ fontFamily: "'JetBrains Mono', monospace" }}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="form-label" htmlFor="rollNo">
+              Roll No. <span style={{ color: '#f87171' }}>*</span>
+            </label>
+            <div className="enrollment-input">
+              <span className="enrollment-prefix">CSJMA</span>
+              <input
+                id="rollNo"
+                name="rollNo"
+                type="text"
+                required
+                placeholder="2100123"
+                value={formData.rollNo.replace(/^CSJMA/i, '')}
+                onChange={(e) => handleChange({ target: { name: 'rollNo', value: e.target.value.replace(/^CSJMA/i, '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase() } })}
+                className="form-input"
+                style={{ fontFamily: "'JetBrains Mono', monospace" }}
+              />
+            </div>
           </div>
         </div>
 
